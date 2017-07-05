@@ -83,16 +83,21 @@ enum node_state get_node_state(struct node *node)
 {
 	uint32_t children = node->n_children;
 
-	if (nessunlikely(node->height == 0)) {
+	if (nessunlikely(node->height == 0)) {  // 节点高度为0，即叶子节点
 		if (node->i->size(node) >= node->opts->leaf_node_size)
+      // 大于叶子节点存放的数据数量，需要进行分裂
 			return FISSIBLE;
 	} else {
+    // 到了这里就是非叶子节点
 		if (children >= node->opts->inner_node_fanout)
+      // 大于fanout数量，需要进行分裂
 			return FISSIBLE;
 
 		if (node->i->size(node) >= node->opts->inner_node_size)
+      // 需要写入磁盘
 			return FLUSHBLE;
 	}
 
+  // 其他情况下都是稳定状态了
 	return STABLE;
 }

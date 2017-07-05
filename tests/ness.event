@@ -1,0 +1,5 @@
+[85666] | 29 Jun 09:45:35 | DEBUG | buftree.c:333 | create new root, NID 3
+[85666] | 29 Jun 09:45:36 | DEBUG | buftree.c:153 | root split begin, old NID 3 , height 0
+[85666] | 29 Jun 09:45:36 | DEBUG | buftree.c:170 | root split end, old NID 4
+[85666] | 29 Jun 09:45:39 | DEBUG | buftree.c:153 | root split begin, old NID 3 , height 1
+[85666] | 29 Jun 09:45:39 | DEBUG | buftree.c:170 | root split end, old NID 20

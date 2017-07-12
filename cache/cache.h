@@ -34,7 +34,7 @@ struct cpair_attr {
 
 struct cpair {
 	NID k;
-	void *v;
+	void *v;        // v指针用来保存对应的node指针，也就是说node和cpair一一对应
 	int pintype;
 	struct cpair_attr attr;
 	struct cache_file *cf;

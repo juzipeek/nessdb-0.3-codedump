@@ -44,7 +44,7 @@ struct disk_info {
 struct partition {
 	int fetched;
 	NID child_nid;
-	void *msgbuf;
+	void *msgbuf; // 每种节点对这个buffer的解释是不同的，leaf就是lmb指针，node就是nmb指针
 	struct disk_info disk_info;
 };
 
@@ -69,7 +69,9 @@ struct node {
 	struct timespec modified;
 
 	int n_children;
+  // pivots数组用来保存分隔的key，数量是child-1
 	struct msg *pivots;
+  // partition保存child的信息
 	struct partition *parts;
 	struct cpair *cpair;
 

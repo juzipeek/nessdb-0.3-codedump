@@ -152,10 +152,12 @@ static void _root_split(struct buftree *t,
 	        , old_root->nid
 	        , old_root->height);
 
+  // 把旧节点分为两部分，保存到a、b中，split_key做为分隔key
 	old_root->i->split(t, old_root, &a, &b, &split_key);
 	/* swap two roots */
 	_root_swap(new_root, old_root);
 
+  // 保存分隔key以及a、b两个子节点
 	msgcpy(&new_root->pivots[0], split_key);
 	new_root->parts[0].child_nid = a->nid;
 	new_root->parts[1].child_nid = b->nid;
@@ -181,6 +183,7 @@ void _root_fissible(struct buftree *t, struct node *root)
 	uint32_t new_root_children = 2;
 
 	/* alloc a nonleaf node with 2 children */
+  // 新建一个有两个子节点，高度为1的内部节点
 	NID nid = hdr_next_nid(t->hdr);
 	inter_new(t->hdr,
 	          nid,
@@ -189,8 +192,10 @@ void _root_fissible(struct buftree *t, struct node *root)
 	          &new_root);
 	new_root->i->init_msgbuf(new_root);
 
+  // 加锁
 	cache_put_and_pin(t->cf, nid, new_root);
 
+  // 开始进行分裂操作
 	_root_split(t, new_root, root);
 
 	cache_unpin(t->cf, root->cpair);
@@ -235,6 +240,7 @@ CHANGE_LOCK_TYPE:
 			locktype = L_WRITE;
 			goto CHANGE_LOCK_TYPE;
 		}
+    // 从root节点开始递归做分裂操作，直到平衡为止
 		_root_fissible(t, root);
 		break;
 	case FLUSHBLE:
@@ -243,6 +249,7 @@ CHANGE_LOCK_TYPE:
 			locktype = L_WRITE;
 			goto CHANGE_LOCK_TYPE;
 		}
+    // flush操作
 		buftree_flush_node_on_background(t, root);
 		break;
 	}
@@ -321,6 +328,7 @@ struct buftree *buftree_open(const char *dbname, struct cache *cache)
 	/* tree root node */
 	if (is_create) {
 		NID nid = hdr_next_nid(t->hdr);
+    // 这里可以看到，root节点最开始是一个leaf
 		leaf_new(t->hdr, nid, 0, 1, &root);
 		root->i->init_msgbuf(root);
 

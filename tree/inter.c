@@ -158,7 +158,9 @@ void inter_split(void *tree,
 	pivots_old = node->n_children - 1;
 	nassert(pivots_old > 2);
 
+  // 分到a的节点pivot数量为原来的一半
 	pivots_in_a = pivots_old / 2;
+  // 剩下的分到b中
 	pivots_in_b = pivots_old - pivots_in_a;
 
 	/* node a */
@@ -173,6 +175,7 @@ void inter_split(void *tree,
 	          &nodeb);
 	cache_put_and_pin(t->cf, nid, nodeb);
 
+  // 乾坤大挪移,把属于b节点的pivots以及part信息移动到b节点中
 	for (i = 0; i < (pivots_in_b); i++)
 		nodeb->pivots[i] = nodea->pivots[pivots_in_a + i];
 

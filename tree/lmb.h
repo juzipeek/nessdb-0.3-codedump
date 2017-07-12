@@ -17,6 +17,7 @@ struct xr {
 };
 
 #define LEAFENTRY_SIZE (sizeof(struct leafentry))
+// 对应一个key在leaf中的数据，这个key的多个值会按照顺序放在xr数组中
 struct leafentry {
 	uint32_t keylen;
 	void *keyp;

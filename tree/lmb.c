@@ -45,6 +45,7 @@ void lmb_free(struct lmb *lmb)
 	xfree(lmb);
 }
 
+// 用于向一个leaf的msgbuf插入一条数据
 void lmb_put(struct lmb *lmb,
              MSN msn,
              msgtype_t type,
@@ -59,9 +60,11 @@ void lmb_put(struct lmb *lmb,
 	struct leafentry *le = NULL;
 	struct pma_coord coord;
 
+  // 初始化一个leafentry
 	struct leafentry kle = {.keylen = key->size, .keyp = key->data};
 
 	ness_rwlock_write_lock(&lmb->rwlock);
+  // 首先到这个lmb的pma中查找是否已经存在同样的key数据了
 	ret = pma_find_zero(lmb->pma,
 	                    (void*)&kle,
 	                    _lmb_entry_key_compare,
@@ -70,6 +73,7 @@ void lmb_put(struct lmb *lmb,
 	                    &coord);
 
 	if (ret == NESS_NOTFOUND) {
+    // 找不到就新分配一个插入到pma中
 		size = (LEAFENTRY_SIZE + key->size);
 		base = mempool_alloc_aligned(lmb->mpool, size);
 		le = (struct leafentry*)base;
@@ -88,9 +92,11 @@ void lmb_put(struct lmb *lmb,
 
 	/* alloc value in mempool arena */
 	if (!le->xrs) {
+    // 如果没有xrs就分配一个
 		le->xrs_size = 1;
 		le->xrs = (struct xr*)mempool_alloc_aligned(lmb->mpool, le->xrs_size * sizeof(struct xr));
 	} else {
+    // 如果原来已经有，但是不够用，就扩大容量
 		int size = le->xrs_size;
 		int nums = (le->num_pxrs + le->num_cxrs);
 
@@ -110,6 +116,7 @@ void lmb_put(struct lmb *lmb,
 	xr->type = type;
 	xr->xid = xidpair->parent_xid;
 	if (type != MSG_DELETE) {
+    // 只要不是删除操作，那么就还需要保存value
 		base = mempool_alloc_aligned(lmb->mpool, val->size);
 		xmemcpy(base, val->data, val->size);
 		xr->vallen = val->size;
@@ -185,6 +192,7 @@ void lmb_split(struct lmb *lmb,
 	uint32_t i = 0;
 	struct mb_iter iter;
 	uint32_t count = lmb_count(lmb);
+  // 分到a的数据数量为count/2
 	uint32_t a_count = count / 2;
 	struct lmb *A = lmb_new(lmb->opts);
 	struct lmb *B = lmb_new(lmb->opts);
@@ -201,8 +209,10 @@ void lmb_split(struct lmb *lmb,
 
 		/* TODO(BohuTANG): count is 2 */
 		if (i <= a_count) {
+      // 在a_count之前的放到a中
 			mb = A;
 			if (nessunlikely(i == a_count)) {
+        // 等于a_count的key做为split_key
 				struct msg spkey = { .size = le->keylen, .data = le->keyp};
 				*split_key = msgdup(&spkey);
 			}
@@ -211,6 +221,7 @@ void lmb_split(struct lmb *lmb,
 		}
 
 		/* append to pma */
+    // 拷贝entry放到pma中
 		_lmb_leafentry_clone(le, mb->mpool, &le_clone);
 		pma_append(mb->pma, le_clone, _lmb_entry_key_compare, mb);
 		mb->count++;

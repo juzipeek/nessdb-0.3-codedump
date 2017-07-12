@@ -338,6 +338,7 @@ void deserialize_node_from_packer(struct hdr *hdr,
 	*node = n;
 }
 
+// 序列化节点数据信息到磁盘
 int serialize_node_to_disk(int fd, struct node *node, struct hdr *hdr)
 {
 	int r;

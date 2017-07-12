@@ -87,6 +87,7 @@ enum node_state get_node_state(struct node *node)
 		if (node->i->size(node) >= node->opts->leaf_node_size)
       // 大于叶子节点存放的数据数量，需要进行分裂
 			return FISSIBLE;
+    // 从这里可以看到，叶子节点不会触发刷盘操作
 	} else {
     // 到了这里就是非叶子节点
 		if (children >= node->opts->inner_node_fanout)

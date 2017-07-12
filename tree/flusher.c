@@ -8,6 +8,7 @@
 #include "c.h"
 #include "t.h"
 
+// 遍历nmb，将里面的数据刷到child中
 void _flush_buffer_to_child(struct node *child, struct nmb *buf)
 {
 	struct mb_iter iter;
@@ -125,17 +126,22 @@ static void _flush_node_func(void *fe)
 
 	node_set_dirty(n);
 	if (buf) {
+    // 如果buf不为空
+    // 那么就将buf刷到子节点中
 		_flush_buffer_to_child(n, buf);
 		nmb_free(buf);
 
 		/* check the child node */
+    // 检查节点状态状态
 		state = get_node_state(n);
 		if (state == FLUSHBLE)
+      // 递归刷新子节点
 			_flush_some_child(t, n);
 		else
 			cache_unpin(t->cf, n->cpair);
 	} else {
 		/* we want flush some buffer from n */
+    // 递归刷新子节点
 		_flush_some_child(t, n);
 	}
 
@@ -172,10 +178,12 @@ void buftree_flush_node_on_background(struct buftree *t, struct node *parent)
 	struct partition *part;
 
 	nassert(parent->height > 0);
+  // 首先找到size最大的子节点
 	childnum = parent->i->find_heaviest(parent);
 	part = &parent->parts[childnum];
 
 	/* pin the child */
+  // 锁住这个子节点，同时根据child_nid拿到child节点指针返回
 	if (cache_get_and_pin(t->cf, part->child_nid, (void**)&child, L_WRITE) != NESS_OK) {
 		__ERROR("cache get node error, nid [%" PRIu64 "]", part->child_nid);
 		return;
@@ -183,12 +191,16 @@ void buftree_flush_node_on_background(struct buftree *t, struct node *parent)
 
 	state = get_node_state(child);
 	if (state == STABLE) {
+    // 如果当前是稳定状态，那么将这个child的buffer取下来
 		/* detach buffer from parent */
 		struct nmb *buf = part->msgbuf;
+    // 设置父节点是脏节点
 		node_set_dirty(parent);
+    // 重新分配一个新的buffer给子节点
 		part->msgbuf = nmb_new(t->hdr->opts);
 
 		/* flush it in background thread */
+    // 放到后台线程中刷到磁盘里
 		_place_node_and_buffer_on_background(t, child, buf);
 		cache_unpin(t->cf, parent->cpair);
 	} else {

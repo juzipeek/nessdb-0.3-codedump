@@ -19,6 +19,7 @@ int buftree_fetch_node(int fd, void *hdr, NID nid, void **n)
 	return r;
 }
 
+// 刷节点数据到磁盘的入口函数
 int buftree_flush_node(int fd, void *hdr, void *n)
 {
 	int r;
@@ -63,6 +64,7 @@ int buftree_free_node(void *n)
 	return NESS_OK;
 }
 
+// 这里绑定node和cpair的对应关系
 int buftree_cache_put(void *n, void *cpair)
 {
 	struct node *node = (struct node*)n;

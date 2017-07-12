@@ -66,6 +66,7 @@ QUOTA_STATE quota_state(struct quota *q)
 int quota_change_limit(struct quota *q, uint64_t limit)
 {
 	ness_mutex_lock(&q->lock);
+  // 从这里可以看出，hw_value为limit的4/5
 	q->hw_value = (4 * limit) / 5;
 	q->limit = limit;
 	ness_mutex_unlock(&q->lock);

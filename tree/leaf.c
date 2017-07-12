@@ -30,6 +30,8 @@ void leaf_new(struct hdr *hdr,
 	node->layout_version = hdr->layout_version;
 
 	if (children > 0) {
+    // 前面children为1，这里-1就是0，所以pivots就是NULL了
+    // 所以在leaf节点中，pviots并没有用上
 		node->pivots = xcalloc(children - 1, PIVOT_SIZE);
 		node->parts = xcalloc(children, PART_SIZE);
 	}
@@ -147,11 +149,13 @@ void leaf_split(void *tree,
 	struct msg *sp_key = NULL;
 	struct buftree *t = (struct buftree*)tree;
 
+  // 旧节点做为分隔后的a节点
 	leafa = node;
 	pa = &leafa->parts[0];
 
 	/* split lmb of leaf to mba & mbb */
 	mb = pa->msgbuf;
+  // 分割lmb的数据到两边
 	lmb_split(mb, &mba, &mbb, &sp_key);
 	lmb_free(mb);
 
@@ -217,6 +221,7 @@ void leaf_apply(struct node *leaf,
 	}
 }
 
+// 找到size最大的子节点返回
 int leaf_find_heaviest_idx(struct node *leaf)
 {
 	int i;

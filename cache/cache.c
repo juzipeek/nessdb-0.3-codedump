@@ -136,6 +136,7 @@ void _try_evict_pair(struct cache_file *cf, struct cpair *p)
 	struct tree_operations *tree_opts;
 
 	tree_opts = p->cf->tree_opts;
+  // root节点不做操作
 	is_root = tree_opts->node_is_root(p->v);
 	if (is_root)
 		return;
@@ -146,6 +147,7 @@ void _try_evict_pair(struct cache_file *cf, struct cpair *p)
 		ness_rwlock_write_lock(&p->disk_lock);
 		xtable_slot_unlocked(cf->xtable, hash);
 
+    // 刷数据到磁盘
 		tree_opts->flush_node(cf->fd, cf->hdr, p->v);
 		tree_opts->node_set_nondirty(p->v);
 
@@ -156,6 +158,7 @@ void _try_evict_pair(struct cache_file *cf, struct cpair *p)
 
 	xtable_slot_locked(cf->xtable, hash);
 	if (ness_rwlock_users(&p->value_lock) == 0) {
+    // 没有用户了，就从缓存中删除这个指针
 		/* remove from list */
 		ness_rwlock_write_lock(&cf->clock_lock);
 		cpair_list_remove(cf->clock, p);
@@ -193,6 +196,7 @@ void _run_eviction(struct cache *c)
 	if (!cur)
 		return;
 
+  // 当前cache不下降到阈值以下，循环就一直进行下去，用来将cache中的数据刷到磁盘
 	while ((quota_state(c->quota) != QUOTA_STATE_NONE) && cur) {
 		int users = 0;
 
@@ -202,6 +206,7 @@ void _run_eviction(struct cache *c)
 		nxt = cur->list_next;
 		ness_rwlock_read_unlock(&cf->clock_lock);
 		if (users == 0) {
+      // 没有锁
 			_try_evict_pair(cf, cur);
 		} else {
 			usleep(100);
@@ -211,6 +216,7 @@ void _run_eviction(struct cache *c)
 	quota_signal(c->quota);
 }
 
+// 将数据刷到磁盘的入口函数
 static void *flusher_cb(void *arg)
 {
 	struct cache *c;
@@ -253,6 +259,8 @@ void _cpair_insert(struct cache_file *cf, struct cpair *p)
 }
 
 /* make room for writes */
+// 独立出这个函数，是为了等待系统的内存够用的情况下才继续分配cache
+// 当达到阈值的情况下首先需要刷cache到磁盘，或者等待一定时间
 void _make_room(struct cache *c)
 {
 	/* check cache limits, if reaches we should slow down */
@@ -376,6 +384,10 @@ ERR:
 	return NESS_ERR;
 }
 
+// 新分配一个node的时候需要调用该函数
+// 用处在于创建对应的cpair指针，放到cache链表里
+// 同时做好node与cpair的对应关系
+// 这个函数返回时，cpair的value_lock是加锁的
 int cache_put_and_pin(struct cache_file *cf, NID k, void *v)
 {
 	struct cpair *p;
@@ -399,6 +411,8 @@ int cache_put_and_pin(struct cache_file *cf, NID k, void *v)
 	return NESS_OK;
 }
 
+// 这里主要是修改cpair的attr中的nodesz大小
+// 同时解锁cpair的value_lock
 void cache_unpin(struct cache_file *cf, struct cpair *p)
 {
 	int hash = p->k;

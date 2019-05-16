@@ -6,12 +6,12 @@
 #define LINE1 "------------------------------------------------------------\n"
 
 #define KEY_SIZE (20)
-#define VAL_SIZE (100)
+#define VAL_SIZE (1000)
 
 void *e;
 void *db;
 struct random *rnd;
-static uint64_t FLAGS_num = 1000000;
+static uint64_t FLAGS_num = 10000000;
 static uint64_t FLAGS_cache_size = (1073741824); // 1GB
 static const char* FLAGS_benchmarks = "fillrandom";
 static int FLAGS_method = 1; //snappy
